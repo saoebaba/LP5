@@ -100,3 +100,21 @@ int main()
 
     return 0; 
 }
+/*output:
+Enter the data => 4
+Do you want to insert one or more nodes? (y/n) y
+
+Enter the data => 10
+Do you want to insert one or more nodes? (y/n) y
+
+Enter the data => 7
+Do you want to insert one or more nodes? (y/n) y
+
+Enter the data => 12
+Do you want to insert one or more nodes? (y/n) y
+
+Enter the data => 15
+Do you want to insert one or more nodes? (y/n) n
+BFS Traversal:
+	4	10	7	12	15
+*/
