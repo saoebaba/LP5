@@ -1,75 +1,94 @@
-#include <iostream>
-#include <omp.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "omp.h"
 
-void merge(int arr[], int l, int m, int r) {
-    int i, j, k;
-    int n1 = m - l + 1;
-    int n2 = r - m;
-    int L[n1], R[n2];
-    for (i = 0; i < n1; i++)
-        L[i] = arr[l + i];
-    for (j = 0; j < n2; j++)
-        R[j] = arr[m + 1 + j];
-    i = 0;
-    j = 0;
-    k = l;
-    while (i < n1 && j < n2) {
-        if (L[i] <= R[j]) {
-            arr[k] = L[i];
-            i++;
-        }
-        else {
-            arr[k] = R[j];
-            j++;
-        }
-        k++;
-    }
-    while (i < n1) {
-        arr[k] = L[i];
-        i++;
-        k++;
-    }
-    while (j < n2) {
-        arr[k] = R[j];
-        j++;
-        k++;
-    }
+#define MAX_SIZE 10
+
+//Function for creating an input array||Update accoorind to your need
+// void read_list(int * x, int n) {
+//     int i,t;
+//   for (i = 0; i < n; i++) {
+//       printf("enter element no : ", i); 
+//       scanf("%d ",&t);
+//       x[i]=t;
+//   }
+//   }
+
+
+void print_list(int * x, int n) {
+   int i;
+   for (i = 0; i < n; i++) {
+      printf("%d ",x[i]);
+   }
 }
 
-void mergeSort(int arr[], int l, int r) {
-    if (l < r) {
-        int m = l + (r - l) / 2;
-        mergeSort(arr, l, m);
-        mergeSort(arr, m + 1, r);
-        merge(arr, l, m, r);
-    }
+//Merging 2 sorted subarrays into one tmp array
+void merge(int * X, int n, int * tmp) {
+   int i = 0;
+   int j = n/2;
+   int ti = 0;
+	//i will iterate till first  half anf J will iterate for 2nd half of array
+   while (i<n/2 && j<n) {
+      if (X[i] < X[j]) {
+         tmp[ti] = X[i];
+         ti++; i++;
+      } else {
+         tmp[ti] = X[j];
+         ti++; 
+	 j++;
+      }
+   }
+   while (i<n/2) { /* finish up lower half */
+      tmp[ti] = X[i];
+	ti++;
+	i++;
+   }
+      while (j<n) { /* finish up upper half */
+         tmp[ti] = X[j];
+         ti++; 
+	 j++;
+   }
+	//Copy sorted array tmp back to  X (Original array)
+   memcpy(X, tmp, n*sizeof(int));
+
+} // end of merge()
+
+void mergesort(int * X, int n, int * tmp)
+{
+   if (n < 2) return;
+
+   #pragma omp task firstprivate (X, n, tmp)
+   mergesort(X, n/2, tmp);
+
+   #pragma omp task firstprivate (X, n, tmp)
+   mergesort(X+(n/2), n-(n/2), tmp);
+	
+   //Wait for both paralel tasks to complete execution
+   #pragma omp taskwait
+
+    /* merge sorted halves into sorted list */
+   merge(X, n, tmp);
 }
 
-int main() {
-    int n;
-    std::cout << "Enter the number of elements: ";
-    std::cin >> n;
 
-    int arr[n];
-    std::cout << "Enter " << n << " elements: ";
-    for (int i = 0; i < n; i++)
-        std::cin >> arr[i];
+int main()
+{
+   int n = 5;
+    // printf("Enter total elements : ");
+    // scanf("%d",&n);
 
-    std::cout << "Given array is: ";
-    for (int i = 0; i < n; i++)
-        std::cout << arr[i] << " ";
-    std::cout << std::endl;
+   int data[] = {3,6,7,2,5} ;
+   int tmp[n];
 
-    double start = omp_get_wtime();
-    mergeSort(arr, 0, n - 1);
-    double stop = omp_get_wtime();
-
-    std::cout << "Sorted array is: ";
-    for (int i = 0; i < n; i++)
-        std::cout << arr[i] << " ";
-    std::cout << std::endl;
-
-    std::cout << "Time taken: " << stop - start << " seconds" << std::endl;
-
-    return 0;
+//   read_list(data, n);
+   printf("List Before Sorting...\n");
+   print_list(data, n);
+   #pragma omp parallel
+   {
+      #pragma omp single
+      mergesort(data, n, tmp);
+   }
+   printf("\nList After Sorting...\n");
+   print_list(data, n);
 }
